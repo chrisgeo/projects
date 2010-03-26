@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="http://yui.yahooapis.com/3.0.0/build/yui/yui-min.js"></script>
+        <script src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+        <style type="text/css">
+            .bd {
+                display: none;
+                border: 1px solid black;
+                background: #000;
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="bd">
+            This is some lazy content.
+        </div>
+    </body>
+    <script type="text/javascript">
+        /* sandboxed code and defining a class */
+        //any CSS selector could be used
+        // e.g div.bd, body > div.bd, etc
+        
+        /* Sandboxed, and extensibile if needed */
+        /*imports node dynamically*/
+        
+        YUI().use('node', function(Y){
+            var bdDiv = Y.one('.bd');
+            
+            //YUI node object
+            //comes with events, style manipulation, and other fun features!
+            
+            console.log(bdDiv);
+            //Y.all will return a list
+            //node and dom operations are all ON the object now - including
+            //but not limited to: events, dom, node, and selector elements
+            
+        
+        });
+        
+        //jquery
+        
+        /* ARGH out in the open */
+        var someFunc = function(){
+            var bdDiv = $('.bd')[0]; //nice convenience method/shortcut
+            
+            //prints element vs overarching 'node' class
+            //meaning we need to still call functionality
+            //separately.
+            console.log(bdDiv);  
+        };
+        
+        //I can set someFunc to whatever I want here before it's called... YIKES.
+        someFunc();
+        
+        
+        /* importing custom CSS OR JS dynamically */
+         YUI({
+            modules: {
+                'gallery-yql': {
+                    fullpath: 'http://yui.yahooapis.com/gallery-2010.01.27-20/build/gallery-yql/gallery-yql-min.js',
+                    requires: ['get','event-custom'],
+                    optional: [],
+                    supersedes: []
+              }
+         
+            }
+        }).use('gallery-yql', function(Y) {
+            //Using events
+            var q1 = new Y.yql('select * from github.user.info where (id = "davglass")');
+            q1.on('query', function(r) {
+                //Do something here.
+            });
+            q1.on('error', function(r) {
+                //Do something here.
+            });
+            //Or the callback approach
+            var temp = new Y.yql('select * from github.user.info where (id = "davglass")', function(r) {
+                //Do something here.
+                //console.log(r.query);
+                console.log(r.query.results);
+                r.query; //The result
+                r.error; //The error message
+            });
+        });
+        
+        //jquery dynamic importing
+        
+        
+        //custom class
+        YUI.add('sm', function(Y){
+            if(!YUI.sm){
+                YUI.sm = {};
+            }
+            
+            //add some functionality!
+            sm = function(text){
+                sm.superclass.constructor.apply(this);
+                //private method
+                this._query(text);
+            };
+            
+            //not really using all of Event Target, but you know...
+            Y.extend(sm, Y.EventTarget, {
+                _query: function(text){
+                    this.monkeyHey = "Survey Monkey says " + text;
+                    return this;
+                }
+            });
+            
+            Y.sm = sm;
+            
+        }, '1.0', { requires: ['event-custom'], skinnable:false});
+        
+        YUI().use('sm', function(Y){
+            console.log(Y.sm);
+            console.log(Y.sm("awesome!"));
+        });
+    </script>
+</html>
