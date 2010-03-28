@@ -5,10 +5,11 @@
         <script src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
         <style type="text/css">
             .bd {
-                display: none;
+                /*display: none;*/
                 border: 1px solid black;
                 background: #000;
                 color: #fff;
+                height: 50px;
             }
         </style>
     </head>
@@ -18,44 +19,60 @@
         </div>
     </body>
     <script type="text/javascript">
-        /* sandboxed code and defining a class */
-        //any CSS selector could be used
-        // e.g div.bd, body > div.bd, etc
+        /**
+         * Sandboxed code and defining a class 
+        * any CSS selector could be used
+        * e.g div.bd, body > div.bd, etc
+        *
+        * Extensible, and dynamically imports
+        * needed elements before, if it can't get them,
+        * times out.
+        **/
         
-        /* Sandboxed, and extensibile if needed */
-        /*imports node dynamically*/
-        
-        YUI().use('node', function(Y){
+        YUI({combine: true /*combo loader*/, timeout: 10000}).use('node', function(Y){
+            //Import the node module from YUI,
+            //useful dom tools
             var bdDiv = Y.one('.bd');
-            
-            //YUI node object
-            //comes with events, style manipulation, and other fun features!
-            
             console.log(bdDiv);
             //Y.all will return a list
             //node and dom operations are all ON the object now - including
             //but not limited to: events, dom, node, and selector elements
             
-        
         });
         
-        //jquery
+        
+        /**
+         * jQuery usage
+         *
+         **/
         
         /* ARGH out in the open */
         var someFunc = function(){
             var bdDiv = $('.bd')[0]; //nice convenience method/shortcut
-            
-            //prints element vs overarching 'node' class
-            //meaning we need to still call functionality
-            //separately.
-            console.log(bdDiv);  
+            /**
+             * prints element vs overarching 'node' class
+             * meaning we need to still call functionality
+             * separately. e.g only methods that exist
+             * directly in the dom can be used. So, creation
+             * and setting of custom events/triggers
+             * needs a separate functionality/callable set
+             **/
+            console.log(bdDiv);
         };
         
-        //I can set someFunc to whatever I want here before it's called... YIKES.
+        // I can set someFunc to whatever I want here before it's called... YIKES.
+        // quick example: Using Grease Monkey I can inject a script and steal, or insert
+        // data into the JS API.
         someFunc();
         
         
-        /* importing custom CSS OR JS dynamically */
+        /** importing custom CSS OR JS dynamically 
+         *      Also note, we can use Y.get, etc to dynamically
+         *      and quickly grab other scripts as well.
+         *
+         *  What this also provides is a fail safe; if it's not found (404, 405, etc)
+         *  the processing ends anad you don't use the classes at all.
+         **/
          YUI({
             modules: {
                 'gallery-yql': {
@@ -76,7 +93,7 @@
                 //Do something here.
             });
             //Or the callback approach
-            var temp = new Y.yql('select * from github.user.info where (id = "davglass")', function(r) {
+            new Y.yql('select * from github.user.info where (id = "davglass")', function(r) {
                 //Do something here.
                 //console.log(r.query);
                 console.log(r.query.results);
@@ -85,37 +102,78 @@
             });
         });
         
-        //jquery dynamic importing
+        /**
+          * jQuery dynamic importing
+          *     No mention of fail-case in API/Docs.
+          **/
+        $.getScript("http://dev.jquery.com/view/trunk/plugins/color/jquery.color.js", function(){
+            $(".bd").animate( { backgroundColor: 'pink' }, 1000)
+              .animate( { backgroundColor: 'blue' }, 1000);
+        });
         
-        
-        //custom class
+        /** 
+          *  Custom class; should be put in another file
+          *  and dynamically imported
+          *  
+          **/
         YUI.add('sm', function(Y){
             if(!YUI.sm){
                 YUI.sm = {};
             }
             
             //add some functionality!
-            sm = function(text){
-                sm.superclass.constructor.apply(this);
-                //private method
+            var sm = function(text){
+                sm.superclass.constructor.apply(this, arguments);
+                
                 this._query(text);
             };
+                   
+            sm.NAME = "testMonkey";
             
-            //not really using all of Event Target, but you know...
-            Y.extend(sm, Y.EventTarget, {
+            sm.ATTRS = {
+                
+            }
+            
+            /* Could extend Y.Base but overlay works for now */
+            Y.extend(sm, Y.Overlay, {
                 _query: function(text){
                     this.monkeyHey = "Survey Monkey says " + text;
+                    Y.one('.bd').setContent(this.monkeyHey);
+                    console.log(this.monkeyHey);
+                    new Y.Anim({
+                        node: Y.one('.bd'),
+                        to: { height: 0 },
+                        easing: Y.Easing.backIn
+                    }).run();
                     return this;
                 }
             });
             
             Y.sm = sm;
             
-        }, '1.0', { requires: ['event-custom'], skinnable:false});
+        }, '1.0', { requires: ['overlay', 'anim'], skinnable:false, combine: true, timeout: 10000});
         
+        //use it.
         YUI().use('sm', function(Y){
-            console.log(Y.sm);
-            console.log(Y.sm("awesome!"));
+            console.log(Y.sm.NAME);
+            console.log(new Y.sm("awesome!"));
         });
+        
+        /** 
+          * jQuery 'extending'
+          *  Only extends JSON style objects - not prototype based.
+          *     Security issue: Still in the open.
+          **/
+          var tmp ={"foo": function(){ console.log(this); }}; 
+          
+          console.log(tmp);
+          $.extend(tmp, {
+            "bar": function(){
+                console.log("temp");
+            }
+          });
+          
+          console.log(tmp);
+          
     </script>
 </html>
