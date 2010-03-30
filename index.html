@@ -10,6 +10,7 @@
                 background: #000;
                 color: #fff;
                 height: 50px;
+                padding: 10px;
             }
         </style>
     </head>
@@ -97,8 +98,6 @@
                 //Do something here.
                 //console.log(r.query);
                 console.log(r.query.results);
-                r.query; //The result
-                r.error; //The error message
             });
         });
         
@@ -142,7 +141,10 @@
                     console.log(this.monkeyHey);
                     new Y.Anim({
                         node: Y.one('.bd'),
-                        to: { height: 0 },
+                        to: { height: function(node){
+                            node.setStyle('padding', 0);
+                            return 0;
+                        }}, //we can overload with a function!
                         easing: Y.Easing.backIn
                     }).run();
                     return this;
@@ -164,7 +166,7 @@
           *  Only extends JSON style objects - not prototype based.
           *     Security issue: Still in the open.
           **/
-          var tmp ={"foo": function(){ console.log(this); }}; 
+          var tmp ={"foo": function(){ console.log(this); }};  //custom 'class'/object. *should be a function*
           
           console.log(tmp);
           $.extend(tmp, {
