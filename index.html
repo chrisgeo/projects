@@ -20,6 +20,25 @@
         </div>
     </body>
     <script type="text/javascript">
+        /*************************************
+         * Basic usage example
+         *  Summary:
+         *      YUI:
+         *          1. Code is sandboxed
+         *          2. Dynamic importing BEFORE anything is used, this includes fail-safes
+         *              for not executing content on failure. Basically, only use what I need to, for
+         *              my specific module
+         *          3. Combo loader! One HTTP request, quicker load.
+         *          4. Automatically searches the DOM for Y.all (returns a nodeList with TONS
+         *              of functionality) or Y.one (returns node with all DOM functionality, plus more)
+         *
+         *      jQuery:
+         *          1. Code is NOT sandboxed - anything can override this.
+         *          2. When getting a dom object, I always have to make sure to access it
+         *              like an array, since that's what it is.
+         *
+         **************************************/
+        
         /**
          * Sandboxed code and defining a class 
         * any CSS selector could be used
@@ -47,7 +66,17 @@
          *
          **/
         
-        /* ARGH out in the open */
+        /** 
+           * jQuery doesn't sandbox their code.
+           * What this means is that I can have collisions and security holes.
+           * If someone wanted to overwrite someFunc; it would pose two issues:
+           *    1. The function just became a security problem, because now the
+           *       function can be anything.
+           *    2. We now don't know the expected behavior of the function - meaning
+           *        there can also be collisions in functionality if someone happens to
+           *        use the same variable name. In essence, this is global and the name
+           *       now become 'reserved'
+           **/
         var someFunc = function(){
             var bdDiv = $('.bd')[0]; //nice convenience method/shortcut
             /**
@@ -61,18 +90,59 @@
             console.log(bdDiv);
         };
         
-        // I can set someFunc to whatever I want here before it's called... YIKES.
-        // quick example: Using Grease Monkey I can inject a script and steal, or insert
+        // I can set someFunc to whatever I want here before it's called... Security hole..
+        // Quick example: Using Grease Monkey I can inject a script and steal, or insert
         // data into the JS API.
         someFunc();
         
         
-        /** importing custom CSS OR JS dynamically 
+        /***
+         *  Alternately you can do:
+         *      function(){
+         *      
+         *      }();
+         *
+         *      This defeats the purpose of making a reusable method though 
+         *      and anonymous functions like this lead to a TON of a memory leaks
+         ***/
+        
+        /*************************************
+         * Dynamic importing example/cross domain requests
+         *
+         *  Summary:
+         *      YUI: 
+         *          * Allows any type of data to be imported: CSS, JS, Callbacks, Scripts, XML
+         *          * Code is sandboxed, and class functionality is inherited, dynamically.
+         *              e.g. I want to use the animation library? Just ask for it. I want to use
+         *              the YQL library? Get BEFORE using and loading my classes
+         *          * Has failture detection - it won't run the script before any of the sources
+         *              has completed
+         *          * Class being used, extends and incorporates other classes, in this case
+         *              because it extends the event class, it can use 'triggers' without too
+         *              much effort.
+         *
+         *      jQuery:
+         *          * Dynamic importing has no fail-safe
+         *          * DOES run callback function on success
+         *          * Function is similar to a class - but not quite. It's missing the ability to
+         *              inherit, and insead 'uses' the functionality from the scripts imported.
+         *              Much like the YUI().use() call.
+         *          * In this case, the callback function is 'sandboxed' but it's anonymous,
+         *              so there's no reuse.
+         *
+         **************************************/
+         
+         
+        /** Importing custom CSS OR JS dynamically 
          *      Also note, we can use Y.get, etc to dynamically
          *      and quickly grab other scripts as well.
          *
          *  What this also provides is a fail safe; if it's not found (404, 405, etc)
-         *  the processing ends anad you don't use the classes at all.
+         *  the processing ends and you don't use the classes at all.
+         *
+         *  Also illustrates the use of frameworks and class inheritence. gallery-yql
+         *  inherits from the Event object, so it can have triggers for firing events. OR,
+         *  it can be done with a callback method. Super useful.
          **/
          YUI({
             modules: {
@@ -95,20 +165,50 @@
             });
             //Or the callback approach
             new Y.yql('select * from github.user.info where (id = "davglass")', function(r) {
-                //Do something here.
-                //console.log(r.query);
                 console.log(r.query.results);
             });
         });
         
         /**
           * jQuery dynamic importing
-          *     No mention of fail-case in API/Docs.
+          *     No mention of fail-case in API/Docs. YUI provides this. Also,
+          *     YUI provides a way to 'auto destroy' the imported AJAX/Script calls
+          *     upon use - meaning it doesn't start crowding the DOM. This was not seen
+          *     in the jQuery APIs. Mostly because YUI uses 'classes' to extend abilities - whereas
+          *     in jQuery everything is a singleton and does not inherit abilities.
+          *     Also, YUI's 'Get' class can be used for anything - from getting and inserting ANY data,
+          *     from ANY url cross-domain
+          *     
+          *     The above YUI example destroys each dynamic calls after it's used - none of the YQL
+          *     query results remain in the DOM.
           **/
         $.getScript("http://dev.jquery.com/view/trunk/plugins/color/jquery.color.js", function(){
             $(".bd").animate( { backgroundColor: 'pink' }, 1000)
               .animate( { backgroundColor: 'blue' }, 1000);
         });
+        
+       /*************************************
+        * Custom Class Example
+        *   Summary:
+        *       YUI:
+        *           * Declare where I'm extending from
+        *           * Uses prototype to create object and inherit
+        *               functionality from all classes associated.
+        *           * Sandboxed.
+        *           * Reusable and importable class.
+        *           * Auto 'initialization' with superclass constructor
+        *           * All the previous advantages are seen
+        *           * Also note, YUI gives you the abilitity to 'mix' and other
+        *               options in their framework. This is also the basis of creating
+        *               YUI plugins and widgets. Not just classes.
+        *
+        *       jQuery:
+        *           * Doesn't use prototyping on functions to extend, only JSON objects
+        *           * None of the above minus variable inheritence (which can be functions)
+        *           * Only importable by calling the file it's in - but the variable is still global
+        *               and not even really namespaced without a lot of effort.
+        *
+        *************************************/
         
         /** 
           *  Custom class; should be put in another file
@@ -155,7 +255,7 @@
             
         }, '1.0', { requires: ['overlay', 'anim'], skinnable:false, combine: true, timeout: 10000});
         
-        //use it.
+        //use it locally
         YUI().use('sm', function(Y){
             console.log(Y.sm.NAME);
             console.log(new Y.sm("awesome!"));
@@ -163,7 +263,11 @@
         
         /** 
           * jQuery 'extending'
-          *  Only extends JSON style objects - not prototype based.
+          *  Only extends JSON style objects - not prototype based. This means
+          *  that everything is 'hash' based instead of being applied to the init() or function of a class.
+          *  In otherwords to be able to initialize this, I have to create a copy of the object and initialize variables
+          *  insead of calling new SomeObject() with a constructor.
+          *
           *     Security issue: Still in the open.
           **/
           var tmp ={"foo": function(){ console.log(this); }};  //custom 'class'/object. *should be a function*
